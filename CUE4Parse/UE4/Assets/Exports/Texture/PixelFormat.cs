@@ -82,6 +82,33 @@ public static class PixelFormatUtils
         new(EPixelFormat.PF_BC6H,               "BC6H",                   4,          4,          1,          16,           3,                true),
         new(EPixelFormat.PF_BC7,                "BC7",                    4,          4,          1,          16,           4,                true)
     };
+
+    public static bool TryGetUnrealPixelFormat(string? name, out EPixelFormat pixelFormat)
+    {
+        pixelFormat = EPixelFormat.PF_Unknown;
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        if (string.Equals(name, "PF_BC6H_Signed", StringComparison.Ordinal))
+        {
+            pixelFormat = EPixelFormat.PF_BC6H;
+            return true;
+        }
+
+        if (Enum.TryParse(name, out pixelFormat) && pixelFormat != EPixelFormat.PF_Unknown)
+        {
+            return true;
+        }
+
+        foreach (var formatInfo in PixelFormats)
+        {
+            if (!string.Equals(formatInfo.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+            pixelFormat = formatInfo.UnrealFormat;
+            return pixelFormat != EPixelFormat.PF_Unknown;
+        }
+
+        pixelFormat = EPixelFormat.PF_Unknown;
+        return false;
+    }
 }
 
 public record FPixelFormatInfo(EPixelFormat UnrealFormat, string Name, int BlockSizeX, int BlockSizeY, int BlockSizeZ, int BlockBytes, int NumComponents, bool Supported)
