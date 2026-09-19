@@ -26,6 +26,17 @@ public class UMorphTarget : UObject
         if (stripFlags.IsAudioVisualDataStripped())
             return;
 
+        // Dakar Desert Rally (Saber's 4.27 branch) cooks the morph deltas into the skeletal
+        // mesh's LOD render data (see FStaticLODModel.SerializeStreamedData) and the
+        // MorphTarget object body follows neither the stock nor the Quarry layout: reading it
+        // as either throws on every one of the game's meshes. The object keeps its properties
+        // and no LOD models.
+        if (Ar.Game is GAME_DakarDesertRally)
+        {
+            Ar.Position = validPos;
+            return;
+        }
+
         var bCooked = FFortniteMainBranchObjectVersion.Get(Ar) >= FFortniteMainBranchObjectVersion.Type.MorphTargetCookedCPUDataCompressed && Ar.ReadBoolean();
         if (Ar.Game is GAME_NevernessToEverness) bCooked = Ar.ReadBoolean();
         if (Ar.Game == GAME_MortalKombat1 && Ar.ReadArray<int>()[^1] != 0) return;

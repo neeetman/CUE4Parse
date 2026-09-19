@@ -556,7 +556,7 @@ public class FStaticLODModel
         }
 
         if (FUE5SpecialProjectStreamObjectVersion.Get(Ar) >= FUE5SpecialProjectStreamObjectVersion.Type.SerializeSkeletalMeshMorphTargetRenderData ||
-                Ar.Game is GAME_TheQuarry)
+                Ar.Game is GAME_TheQuarry or GAME_DakarDesertRally)
         {
             bool bSerializeCompressedMorphTargets = Ar.ReadBoolean();
             if (bSerializeCompressedMorphTargets)
