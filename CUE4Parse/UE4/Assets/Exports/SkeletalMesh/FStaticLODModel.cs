@@ -408,6 +408,11 @@ public class FStaticLODModel
             }
             else
             {
+                // Dakar Desert Rally keeps the compressed morph targets of a streamed LOD resident in the
+                // package: bSerializeCompressedMorphTargets + FMorphTargetVertexInfoBuffers precede the bulk data
+                if (Ar.Game is GAME_DakarDesertRally && Ar.ReadBoolean())
+                    MorphTargetVertexInfoBuffers = new FMorphTargetVertexInfoBuffers(Ar);
+
                 var bulk = new FByteBulkData(Ar);
                 var bulkData = bulk.Data;
                 if (bulk.Header.ElementCount > 0 && bulkData != null)
