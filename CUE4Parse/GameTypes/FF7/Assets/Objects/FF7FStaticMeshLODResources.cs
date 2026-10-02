@@ -17,7 +17,12 @@ public static class FF7FStaticMeshLODResources
 
         var indicesBuffer = tempAr.ReadArray<uint>();
         var batchesBuffer = tempAr.ReadArray<uint>();
-        var batchInfos = tempAr.ReadArray(() => new FF7BatchInfo(tempAr));
+        // The cluster records are 80 bytes (FF7BatchInfo) in older cooks and 68 bytes in the 1.0.0.5 cook
+        // (the MassiveEnvironment cluster record); neither is used here, so the size is decided by
+        // which one leaves the following arrays consistent.
+        var batchInfoCount = tempAr.Read<int>();
+        var batchInfoSize = BatchInfoSize(tempAr, batches.Length, batchInfoCount);
+        tempAr.Position += (long) batchInfoCount * batchInfoSize;
 
         var lods = tempAr.ReadArray(() => new FF7Lod(tempAr));
         var batchesIndices = tempAr.ReadArray<int>(); // batches reordering ???
@@ -27,7 +32,18 @@ public static class FF7FStaticMeshLODResources
         var sectionsIndices = tempAr.ReadArray<uint>();
         var lodinfos = tempAr.ReadArray(() => new FF7LodInfo(tempAr));
 
+        // 1.0.0.5 cooks store every meshlet LOD level of a section in one buffer; the cluster groups
+        // (`lods`) carry each level's error interval. Keep the finest level only, or the coarse levels
+        // are drawn on top of it.
+        var keepBatch = batchInfoSize == 68 ? FinestBatches(lods, batches.Length) : null;
+        var keepTriangle = new bool[batchesBuffer.Length];
         var ib = new List<uint>(batchesBuffer.Length * 3);
+        for (var b = 0; b < batches.Length; b++)
+        {
+            var batch = batches[b];
+            for (var i = 0; i < batch.TrianglesCount; i++)
+                keepTriangle[batch.TotatTriangles + i] = keepBatch == null || keepBatch[b];
+        }
         foreach (var batch in batches)
         {
             var vertices = new HashSet<uint>();
@@ -54,17 +70,71 @@ public static class FF7FStaticMeshLODResources
         for (int i = 0; i < sectionsIndices.Length; i++)
         {
             var section = lodinfos[sectionsIndices[i]];
-            sectionTrianglesCount[i] = section.BatchesCount;
-            indexbuffer.AddRange(fullIndexBuffer.AsSpan()[(section.BatchesOffset * 3)..((section.BatchesOffset + section.BatchesCount) * 3)]);
+            var kept = 0;
+            for (var t = section.BatchesOffset; t < section.BatchesOffset + section.BatchesCount; t++)
+            {
+                if (!keepTriangle[t]) continue;
+                indexbuffer.Add(fullIndexBuffer[t * 3]);
+                indexbuffer.Add(fullIndexBuffer[t * 3 + 1]);
+                indexbuffer.Add(fullIndexBuffer[t * 3 + 2]);
+                kept++;
+            }
+            sectionTrianglesCount[i] = kept;
         }
 
-        var sections1 = tempAr.ReadArray<uint>();
-        var lodInfos1 = tempAr.ReadArray(() => new FF7LodInfo(tempAr));
-        var anotherBuffer = tempAr.ReadArray<uint>();
+        // The trailing section/LOD-info copies are not used, and their layout differs between cooks
+        // (Box_Single_01A_Physics in 1.0.0.5 ends 4 bytes into an FF7LodInfo); reading them threw
+        // away an index buffer that was already complete.
 
         tempAr.Dispose();
         indexBuffer = indexbuffer.ToArray();
         return true;
+    }
+
+    private static int BatchInfoSize(FArchive Ar, int batchCount, int batchInfoCount)
+    {
+        var start = Ar.Position;
+        foreach (var size in (int[]) [80, 68])
+        {
+            var lodsAt = start + (long) batchInfoCount * size;
+            if (lodsAt + 4 > Ar.Length) continue;
+            Ar.Position = lodsAt;
+            var lodCount = Ar.Read<int>();
+            var orderAt = lodsAt + 4 + (long) lodCount * 64;
+            if (lodCount < 0 || orderAt + 4 > Ar.Length) continue;
+            Ar.Position = orderAt;
+            if (Ar.Read<int>() == batchCount)
+            {
+                Ar.Position = start;
+                return size;
+            }
+        }
+        Ar.Position = start;
+        return 80;
+    }
+
+    private static bool[] FinestBatches(FF7Lod[] groups, int batchCount)
+    {
+        var keep = new bool[batchCount];
+        bool Pick(Func<FF7Lod, bool> select)
+        {
+            var any = false;
+            foreach (var g in groups)
+            {
+                if (!select(g)) continue;
+                for (var b = Math.Max(g.Offset, 0); b < g.Offset + g.Count && b < batchCount; b++)
+                {
+                    keep[b] = true;
+                    any = true;
+                }
+            }
+            return any;
+        }
+        // Error interval in Position3.Z / Position3.W: the finest level starts below zero and is finite;
+        // an interval reaching 1e10 is the always-on root proxy.
+        if (!Pick(g => g.Position3.Z < 0 && g.Position3.W < 1e9f) && !Pick(g => g.Position3.Z <= 0))
+            Array.Fill(keep, true);
+        return keep;
     }
 }
 
