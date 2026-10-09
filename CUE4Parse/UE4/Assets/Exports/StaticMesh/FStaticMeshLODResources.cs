@@ -176,6 +176,7 @@ public class FStaticMeshLODResources
             // uint32 DepthOnlyIBSize       = 0;
             // uint32 ReversedIBsSize       = 0;
             Ar.Position += 12;
+            if (Ar.Game is GAME_DeadIsland2) Ar.Position += 4; // Dambuster: extra int32 (-1) ahead of the buffer sizes
 
             if (Ar.Game is GAME_StarWarsJediSurvivor or GAME_TheFinals or GAME_ArcRaiders) Ar.Position += 4;
             if (Ar.Game is GAME_NeedForSpeedMobile)

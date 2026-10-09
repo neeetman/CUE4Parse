@@ -465,6 +465,8 @@ public class FStaticLODModel
             {
                 SerializeStreamedData(Ar, bHasVertexColors);
 
+                if (Ar.Game == GAME_DeadIsland2) Ar.Position += 12; // Dambuster: int64 + int32 trailer per inlined LOD
+
                 if (Ar.Game == GAME_RogueCompany)
                 {
                     Ar.Position += 12; // 1 (Long) + 2^16 (Int)
