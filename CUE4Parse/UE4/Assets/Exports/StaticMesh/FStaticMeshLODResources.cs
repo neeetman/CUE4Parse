@@ -67,6 +67,8 @@ public class FStaticMeshLODResources
             MaxDeviation = Ar.Read<float>();
         }
 
+        if (Ar.Game is GAME_DeadIsland2) Ar.Position += 4; // Dambuster: extra int32 per LOD between MaxDeviation and bIsLODCookedOut
+
         if (Ar.Game is GAME_ThePathless or GAME_ARKSurvivalAscended) Ar.Position += 4;
         if (Ar.Game == GAME_NeedForSpeedMobile)
         {
@@ -105,6 +107,9 @@ public class FStaticMeshLODResources
                 {
                     case GAME_RogueCompany:
                         Ar.Position += 10;
+                        break;
+                    case GAME_DeadIsland2:
+                        Ar.Position += 4; // extra int32 (-1) ahead of the buffer sizes; streamed LODs don't have it
                         break;
                     case GAME_TheDivisionResurgence:
                         Ar.Position += 12;
@@ -176,7 +181,6 @@ public class FStaticMeshLODResources
             // uint32 DepthOnlyIBSize       = 0;
             // uint32 ReversedIBsSize       = 0;
             Ar.Position += 12;
-            if (Ar.Game is GAME_DeadIsland2) Ar.Position += 4; // Dambuster: extra int32 (-1) ahead of the buffer sizes
 
             if (Ar.Game is GAME_StarWarsJediSurvivor or GAME_TheFinals or GAME_ArcRaiders) Ar.Position += 4;
             if (Ar.Game is GAME_NeedForSpeedMobile)

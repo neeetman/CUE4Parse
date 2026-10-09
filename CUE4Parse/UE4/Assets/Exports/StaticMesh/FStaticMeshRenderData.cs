@@ -116,7 +116,9 @@ public class FStaticMeshRenderData
                 }
                 else
                 {
-                    for (var i = 0; i < LODs.Length; i++)
+                    // Dambuster writes a single distance field (flag + data) for the whole render data, not one per LOD
+                    var numDistanceFields = Ar.Game is GAME_DeadIsland2 ? Math.Min(1, LODs.Length) : LODs.Length;
+                    for (var i = 0; i < numDistanceFields; i++)
                     {
                         var bValid = Ar.ReadBoolean();
                         if (bValid)
