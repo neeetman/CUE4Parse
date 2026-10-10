@@ -472,6 +472,14 @@ public class FStaticLODModel
             {
                 SerializeStreamedData(Ar, bHasVertexColors);
 
+                if (Ar.Game == GAME_DeadIsland2)
+                {
+                    // Dambuster: an extra per-vertex stream (Stride, NumVertices, bulk data) plus an int32 follow every inlined LOD
+                    Ar.Position += 4; // Stride
+                    if (Ar.Read<int>() > 0) Ar.SkipBulkArrayData();
+                    Ar.Position += 4;
+                }
+
                 if (Ar.Game == GAME_RogueCompany)
                 {
                     Ar.Position += 12; // 1 (Long) + 2^16 (Int)

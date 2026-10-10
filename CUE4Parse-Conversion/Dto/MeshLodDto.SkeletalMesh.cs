@@ -26,6 +26,26 @@ public partial class MeshLodDto<TVertex>
             }
         }
 
+        // Sections can overlap (e.g. Dead Island 2 keeps disabled sections spanning the vertex ranges of the enabled ones).
+        // A vertex's bone indices refer to the bone map of the enabled section that owns it, so resolve ownership up front.
+        ushort[]?[]? ownerBoneMaps = null;
+        if (!bUseVerticesFromSections && lod.Chunks.Length == 0 && lod.Sections.Any(x => x.bDisabled))
+        {
+            ownerBoneMaps = new ushort[]?[vertexCount];
+            foreach (var disabledPass in new[] { false, true })
+            {
+                foreach (var section in lod.Sections)
+                {
+                    if (section.bDisabled != disabledPass) continue;
+                    var end = Math.Min((long) section.BaseVertexIndex + section.NumVertices, vertexCount);
+                    for (var v = (long) section.BaseVertexIndex; v < end; v++)
+                    {
+                        ownerBoneMaps[v] ??= section.BoneMap;
+                    }
+                }
+            }
+        }
+
         var extraUvs = new FMeshUVFloat[Math.Max(0, lod.NumTexCoords - 1)][];
         var vertices = new SkinnedMeshVertex[vertexCount];
 
@@ -59,12 +79,23 @@ public partial class MeshLodDto<TVertex>
                 else
                 {
                     // UE4.13+ code: chunk information migrated to sections
+                    if (chunkIndex >= lod.Sections.Length)
+                    {
+                        lastChunkVertex = long.MaxValue; // vertices past the last section keep its bone map
+                        break;
+                    }
+
                     var s = lod.Sections[chunkIndex++];
                     lastChunkVertex = s.BaseVertexIndex + s.NumVertices;
                     boneMap = s.BoneMap;
                 }
 
                 chunkVertexIndex = 0;
+            }
+
+            if (ownerBoneMaps?[i] is { } ownerBoneMap)
+            {
+                boneMap = ownerBoneMap;
             }
 
             FSkelMeshVertexBase vertex;
@@ -99,8 +130,26 @@ public partial class MeshLodDto<TVertex>
         for (var i = 0; i < sections.Length; i++)
         {
             sections[i] = new MeshSectionDto(lod.Sections[i]);
+
+            // A disabled section is not drawn; Dead Island 2 leaves some pointing past the vertex buffer. Drop their triangles.
+            if (lod.Sections[i].bDisabled && !IndicesInRange(lod.Indices.Buffer, sections[i], vertices.Length))
+            {
+                sections[i].NumFaces = 0;
+            }
         }
 
         return new MeshLodDto<SkinnedMeshVertex>(owner, sourceLodIndex, lod.Indices.Buffer, vertices, sections, extraUvs, vertexColors, screenSize);
+    }
+
+    private static bool IndicesInRange(uint[] indices, MeshSectionDto section, int vertexCount)
+    {
+        var end = (long) section.FirstIndex + (long) section.NumFaces * 3;
+        if (section.FirstIndex < 0 || end > indices.Length) return false;
+        for (var k = section.FirstIndex; k < end; k++)
+        {
+            if (indices[k] >= vertexCount) return false;
+        }
+
+        return true;
     }
 }

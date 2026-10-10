@@ -303,6 +303,12 @@ public class FSkelMeshSection
             Ar.Position += 2;
         }
 
+        if (Ar.Game is GAME_DeadIsland2)
+        {
+            // Dambuster appends per-section sub-ranges: TArray<18 bytes: NumTriangles, BaseIndex, BaseVertexIndex (int32 each), NumVertices (uint16), flag (uint16), uint16> + uint16
+            var subRanges = Ar.Read<int>();
+            Ar.Position += subRanges * 18L + 2;
+        }
         Ar.Position += Ar.Game switch
         {
             GAME_OutlastTrials => 1,
