@@ -27,6 +27,7 @@ public class UStaticMesh : UObject
         base.Deserialize(Ar, validPos);
         LODForCollision = GetOrDefault(nameof(LODForCollision), 0);
 
+
         var stripDataFlags = new FStripDataFlags(Ar);
         bCooked = Ar.Ver >= EUnrealEngineObjectUE4Version.STATIC_MESH_REFACTOR && Ar.ReadBoolean();
         HasTangents = Ar.Ver >= EUnrealEngineObjectUE3Version.STATICMESH_VERTEXBUFFER_MERGE;
@@ -39,7 +40,7 @@ public class UStaticMesh : UObject
 
         if (Ar.Game == GAME_WutheringWaves && GetOrDefault<bool>("bUseStandaloneBodySetup"))
             BodySetup = GetOrDefault<FPackageIndex>("StandaloneBodySetup");
-        else
+        else if (Ar.Game != GAME_GhostwireTokyo || GetOrDefault("bTngUseBodySetup", true))
             BodySetup = new FPackageIndex(Ar);
 
         if (Ar.Ver < EUnrealEngineObjectUE3Version.REMOVE_STATICMESH_COLLISIONMODEL)
