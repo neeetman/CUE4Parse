@@ -98,6 +98,7 @@ public enum EGame : uint
         GAME_Placeholder3 = GAME_UE4_25 + 13,
         GAME_Back4Blood = GAME_UE4_25 + 14, // UE 4.25 Plus
         GAME_NiNoKuniCrossWorlds = GAME_UE4_25 + 15,
+        GAME_GothamKnights = GAME_UE4_25 + 16,
     GAME_UE4_26 = GameUtils.GameUe4Base + (26 << 16),
         GAME_GTATheTrilogyDefinitiveEdition = GAME_UE4_26 + 1,
         GAME_UE4_26_Plus = GAME_UE4_26 + 2,
