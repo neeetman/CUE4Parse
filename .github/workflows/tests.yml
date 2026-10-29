@@ -30,6 +30,9 @@ jobs:
       - name: Run all tests with UE5.8 fixtures
         run: dotnet test CUE4Parse.Tests/CUE4Parse.Tests.csproj --configuration Release --logger "console;verbosity=normal"
 
+      - name: Test upstream sync reporting
+        run: node --test .github/scripts/report-upstream-sync.test.cjs
+
   fixtures-ue6-linux:
     name: fixtures-ue6-linux
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 # Daily merge of FabianFG/CUE4Parse master into our uepacktool-fixes branch.
 # Merged result is pushed only when the managed build still succeeds; a merge
-# conflict or a build failure opens (or updates) an issue instead of pushing.
+# conflict or validation failure is recorded in the Actions summary; nothing is pushed.
 name: Sync upstream
 
 on:
@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  issues: write
 
 concurrency:
   group: sync-upstream
@@ -39,11 +38,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/upstream-sync"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git remote add upstream "$UPSTREAM_URL"
           git fetch --no-tags upstream "$UPSTREAM_BRANCH"
-          up=$(git rev-parse --short "upstream/$UPSTREAM_BRANCH")
+          up=$(git rev-parse "upstream/$UPSTREAM_BRANCH")
           echo "upstream_sha=$up" >> "$GITHUB_OUTPUT"
           if git merge-base --is-ancestor "upstream/$UPSTREAM_BRANCH" HEAD; then
             echo "already contains upstream/$UPSTREAM_BRANCH ($up)"
@@ -57,15 +57,19 @@ jobs:
             echo "result=merged" >> "$GITHUB_OUTPUT"
           else
             {
-              echo '```'
               git diff --name-only --diff-filter=U
-              echo '```'
-            } > /tmp/conflicts.md
-            git merge --abort
-            echo "result=conflict" >> "$GITHUB_OUTPUT"
+              git diff --cc
+            } > "$RUNNER_TEMP/upstream-sync/conflicts.log"
+            if [[ -n "$(git ls-files -u)" ]]; then
+              echo "result=conflict" >> "$GITHUB_OUTPUT"
+            else
+              echo "result=merge-error" >> "$GITHUB_OUTPUT"
+            fi
+            git merge --abort || true
           fi
 
       - name: Setup .NET
+        id: setup
         if: steps.merge.outputs.result == 'merged'
         uses: actions/setup-dotnet@v6
         with:
@@ -77,42 +81,44 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          set -o pipefail
-          dotnet build CUE4Parse/CUE4Parse.csproj -c Release -nologo -clp:NoSummary 2>&1 | tee /tmp/build.log
-          dotnet build CUE4Parse-Conversion/CUE4Parse-Conversion.csproj -c Release -nologo -clp:NoSummary 2>&1 | tee -a /tmp/build.log
+          set -euo pipefail
+          dotnet build CUE4Parse/CUE4Parse.csproj -c Release -nologo -clp:NoSummary 2>&1 | tee "$RUNNER_TEMP/upstream-sync/build.log"
+          dotnet build CUE4Parse-Conversion/CUE4Parse-Conversion.csproj -c Release -nologo -clp:NoSummary 2>&1 | tee -a "$RUNNER_TEMP/upstream-sync/build.log"
+
+      - name: Run parser regressions
+        id: test
+        if: steps.merge.outputs.result == 'merged' && steps.build.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test .github/scripts/report-upstream-sync.test.cjs
+          dotnet test CUE4Parse.Tests/CUE4Parse.Tests.csproj -c Release --filter 'FullyQualifiedName~UpstreamSyncRegressionTests' --logger 'console;verbosity=normal' 2>&1 | tee "$RUNNER_TEMP/upstream-sync/test.log"
 
       - name: Push merge
-        if: steps.merge.outputs.result == 'merged' && steps.build.outcome == 'success'
+        id: push
+        if: steps.merge.outputs.result == 'merged' && steps.build.outcome == 'success' && steps.test.outcome == 'success'
         shell: bash
         run: git push origin "HEAD:$TARGET_BRANCH"
 
-      - name: Report failure as an issue
-        if: steps.merge.outputs.result == 'conflict' || steps.build.outcome == 'failure'
-        uses: actions/github-script@v8
+      - name: Report sync result
+        if: always()
+        shell: bash
         env:
           RESULT: ${{ steps.merge.outputs.result }}
+          MERGE_OUTCOME: ${{ steps.merge.outcome }}
+          SETUP_OUTCOME: ${{ steps.setup.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          PUSH_OUTCOME: ${{ steps.push.outcome }}
+          JOB_STATUS: ${{ job.status }}
           UPSTREAM_SHA: ${{ steps.merge.outputs.upstream_sha }}
           BEHIND: ${{ steps.merge.outputs.behind }}
-        with:
-          script: |
-            const fs = require('fs');
-            const { RESULT, BUILD_OUTCOME, UPSTREAM_SHA, BEHIND, TARGET_BRANCH, UPSTREAM_BRANCH } = process.env;
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const title = 'Upstream sync needs attention';
-            let body;
-            if (RESULT === 'conflict') {
-              const files = fs.existsSync('/tmp/conflicts.md') ? fs.readFileSync('/tmp/conflicts.md', 'utf8') : '(none recorded)';
-              body = `Merging \`upstream/${UPSTREAM_BRANCH}\` (${UPSTREAM_SHA}, ${BEHIND} commits) into \`${TARGET_BRANCH}\` conflicts in:\n\n${files}\nResolve locally:\n\n\`\`\`bash\ngit fetch upstream ${UPSTREAM_BRANCH}\ngit checkout ${TARGET_BRANCH}\ngit merge upstream/${UPSTREAM_BRANCH}\n\`\`\`\n\n[workflow run](${runUrl})`;
-            } else {
-              let log = fs.existsSync('/tmp/build.log') ? fs.readFileSync('/tmp/build.log', 'utf8') : '';
-              const errors = log.split('\n').filter(l => /error [A-Z]+[0-9]+:/.test(l)).slice(0, 40).join('\n') || log.slice(-4000);
-              body = `\`upstream/${UPSTREAM_BRANCH}\` (${UPSTREAM_SHA}, ${BEHIND} commits) merges cleanly into \`${TARGET_BRANCH}\` but the build fails, so nothing was pushed:\n\n\`\`\`\n${errors}\n\`\`\`\n\n[workflow run](${runUrl})`;
-            }
-            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'upstream-sync', per_page: 5 });
-            if (open.length) {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body });
-            } else {
-              await github.rest.issues.create({ ...context.repo, title, body, labels: ['upstream-sync'] });
-            }
-            core.setFailed(`${title}: ${RESULT === 'conflict' ? 'merge conflict' : 'build failed'}`);
+        run: |
+          if [[ -f .github/scripts/report-upstream-sync.cjs ]]; then
+            node .github/scripts/report-upstream-sync.cjs
+          else
+            echo '## Upstream sync failed before reporting was available' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Check the checkout step and workflow logs for details.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
