@@ -1,6 +1,7 @@
 # Daily merge of FabianFG/CUE4Parse master into our uepacktool-fixes branch.
 # Merged result is pushed only when the managed build still succeeds; a merge
-# conflict or a build failure opens (or updates) an issue instead of pushing.
+# conflict or a build failure is written to the job summary (and to an issue
+# when Issues are enabled) instead of pushing.
 name: Sync upstream
 
 on:
@@ -109,10 +110,17 @@ jobs:
               const errors = log.split('\n').filter(l => /error [A-Z]+[0-9]+:/.test(l)).slice(0, 40).join('\n') || log.slice(-4000);
               body = `\`upstream/${UPSTREAM_BRANCH}\` (${UPSTREAM_SHA}, ${BEHIND} commits) merges cleanly into \`${TARGET_BRANCH}\` but the build fails, so nothing was pushed:\n\n\`\`\`\n${errors}\n\`\`\`\n\n[workflow run](${runUrl})`;
             }
-            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'upstream-sync', per_page: 5 });
-            if (open.length) {
-              await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body });
-            } else {
-              await github.rest.issues.create({ ...context.repo, title, body, labels: ['upstream-sync'] });
+            // The job summary always carries the report; the issue is a bonus because
+            // this fork may have Issues disabled (the API then answers 410).
+            await core.summary.addHeading(title, 2).addRaw(body).write();
+            try {
+              const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'upstream-sync', per_page: 5 });
+              if (open.length) {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body });
+              } else {
+                await github.rest.issues.create({ ...context.repo, title, body, labels: ['upstream-sync'] });
+              }
+            } catch (e) {
+              core.warning(`Could not report via an issue (${e.message}); see the job summary.`);
             }
             core.setFailed(`${title}: ${RESULT === 'conflict' ? 'merge conflict' : 'build failed'}`);
