@@ -131,6 +131,9 @@ public enum EGame : uint
         GAME_ArenaBreakoutMobile = GAME_UE4_26 + 30,
         GAME_ValorantSource = GAME_UE4_26 + 31,
     GAME_UE4_27 = GameUtils.GameUe4Base + (27 << 16),
+        // Fork-only titles live in a reserved range at the top of the block, so upstream
+        // appending GAME_UE4_27 + N at the tail never conflicts or aliases with them.
+        GAME_DakarDesertRally = GAME_UE4_27 + 0x8000,
         GAME_Splitgate = GAME_UE4_27 + 1,
         GAME_HYENAS = GAME_UE4_27 + 2,
         GAME_HogwartsLegacy = GAME_UE4_27 + 3,
@@ -171,7 +174,6 @@ public enum EGame : uint
         GAME_AliensFireteamElite2 = GAME_UE4_27 + 38,
         GAME_GangstarMirageCity = GAME_UE4_27 + 39,
         GAME_ArcheAgeWar = GAME_UE4_27 + 40,
-        GAME_DakarDesertRally = GAME_UE4_27 + 41,
     GAME_UE4_28 = GameUtils.GameUe4Base + (28 << 16),
 
     GAME_UE4_LATEST = GAME_UE4_28,
