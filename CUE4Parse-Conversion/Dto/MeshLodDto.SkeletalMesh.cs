@@ -1,12 +1,13 @@
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Meshes;
+using CUE4Parse_Conversion.Options;
 
 namespace CUE4Parse_Conversion.Dto;
 
 public partial class MeshLodDto<TVertex>
 {
-    internal static MeshLodDto<SkinnedMeshVertex> FromSkeletalMesh(SkeletalMeshDto owner, uint sourceLodIndex, FStaticLODModel lod, float screenSize)
+    internal static MeshLodDto<SkinnedMeshVertex> FromSkeletalMesh(SkeletalMeshDto owner, ExportOptions options, uint sourceLodIndex, FStaticLODModel lod, float screenSize)
     {
         ArgumentNullException.ThrowIfNull(lod.Indices?.Buffer, "LOD has no index buffer");
 
@@ -138,7 +139,7 @@ public partial class MeshLodDto<TVertex>
             }
         }
 
-        return new MeshLodDto<SkinnedMeshVertex>(owner, sourceLodIndex, lod.Indices.Buffer, vertices, sections, extraUvs, vertexColors, screenSize);
+        return new MeshLodDto<SkinnedMeshVertex>(owner, options, sourceLodIndex, lod.Indices.Buffer, vertices, sections, extraUvs, vertexColors, screenSize);
     }
 
     private static bool IndicesInRange(uint[] indices, MeshSectionDto section, int vertexCount)
