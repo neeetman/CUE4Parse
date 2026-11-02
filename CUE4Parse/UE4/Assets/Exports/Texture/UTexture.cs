@@ -112,7 +112,7 @@ public class UTexture : UUnrealMaterial, IAssetUserData
         var pixelFormatName = Ar.ReadFName();
         while (!pixelFormatName.IsNone)
         {
-            if (!Enum.TryParse(pixelFormatName.Text, ignoreCase: true, out EPixelFormat pixelFormat))
+            if (!PixelFormatUtils.TryGetUnrealPixelFormat(pixelFormatName.Text, out var pixelFormat))
                 Log.Warning("Failed to parse pixel format: {PixelFormat}", pixelFormatName.Text);
 
             var skipOffset = Ar.Game switch
