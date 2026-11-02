@@ -76,7 +76,8 @@ public enum EGame : uint
         GAME_StarWarsJediFallenOrder = GAME_UE4_21 + 1,
         GAME_Undawn = GAME_UE4_21 + 2,
     GAME_UE4_22 = GameUtils.GameUe4Base + (22 << 16),
-        GAME_DestroyAllHumans = GAME_UE4_22 + 1,
+        // Fork-only (reserved range, see GAME_UE4_27).
+        GAME_DestroyAllHumans = GAME_UE4_22 + 0x8000,
     GAME_UE4_23 = GameUtils.GameUe4Base + (23 << 16),
         GAME_ApexLegendsMobile = GAME_UE4_23 + 1,
     GAME_UE4_24 = GameUtils.GameUe4Base + (24 << 16),
@@ -84,6 +85,8 @@ public enum EGame : uint
         GAME_BigRumbleBoxingCreedChampions = GAME_UE4_24 + 2,
         GAME_AssaultFireFuture = GAME_UE4_24 + 3,
     GAME_UE4_25 = GameUtils.GameUe4Base + (25 << 16),
+        // Fork-only (reserved range, see GAME_UE4_27).
+        GAME_GothamKnights = GAME_UE4_25 + 0x8000,
         GAME_UE4_25_Plus = GAME_UE4_25 + 1,
         GAME_RogueCompany = GAME_UE4_25 + 2,
         GAME_DeadIsland2 = GAME_UE4_25 + 3,
@@ -99,7 +102,6 @@ public enum EGame : uint
         GAME_Placeholder3 = GAME_UE4_25 + 13,
         GAME_Back4Blood = GAME_UE4_25 + 14, // UE 4.25 Plus
         GAME_NiNoKuniCrossWorlds = GAME_UE4_25 + 15,
-        GAME_GothamKnights = GAME_UE4_25 + 16,
     GAME_UE4_26 = GameUtils.GameUe4Base + (26 << 16),
         GAME_GTATheTrilogyDefinitiveEdition = GAME_UE4_26 + 1,
         GAME_UE4_26_Plus = GAME_UE4_26 + 2,
