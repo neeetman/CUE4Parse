@@ -99,6 +99,7 @@ public enum EGame : uint
         GAME_Placeholder3 = GAME_UE4_25 + 13,
         GAME_Back4Blood = GAME_UE4_25 + 14, // UE 4.25 Plus
         GAME_NiNoKuniCrossWorlds = GAME_UE4_25 + 15,
+        GAME_GothamKnights = GAME_UE4_25 + 16,
     GAME_UE4_26 = GameUtils.GameUe4Base + (26 << 16),
         GAME_GTATheTrilogyDefinitiveEdition = GAME_UE4_26 + 1,
         GAME_UE4_26_Plus = GAME_UE4_26 + 2,
@@ -135,6 +136,7 @@ public enum EGame : uint
         // Fork-only titles live in a reserved range at the top of the block, so upstream
         // appending GAME_UE4_27 + N at the tail never conflicts or aliases with them.
         GAME_DakarDesertRally = GAME_UE4_27 + 0x8000,
+        GAME_GhostwireTokyo = GAME_UE4_27 + 0x8001,
         GAME_Splitgate = GAME_UE4_27 + 1,
         GAME_HYENAS = GAME_UE4_27 + 2,
         GAME_HogwartsLegacy = GAME_UE4_27 + 3,
