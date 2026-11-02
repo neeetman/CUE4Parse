@@ -1,4 +1,4 @@
-# Daily merge of FabianFG/CUE4Parse master into our uepacktool-fixes branch.
+# Daily merge of FabianFG/CUE4Parse master into our master branch (the fork keeps only master).
 # Merged result is pushed only when the managed build still succeeds; a merge
 # conflict or a build failure is written to the job summary (and to an issue
 # when Issues are enabled) instead of pushing.
@@ -20,7 +20,7 @@ concurrency:
 env:
   UPSTREAM_URL: https://github.com/FabianFG/CUE4Parse.git
   UPSTREAM_BRANCH: master
-  TARGET_BRANCH: uepacktool-fixes
+  TARGET_BRANCH: master
 
 jobs:
   merge:
