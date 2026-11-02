@@ -76,6 +76,7 @@ public enum EGame : uint
         GAME_StarWarsJediFallenOrder = GAME_UE4_21 + 1,
         GAME_Undawn = GAME_UE4_21 + 2,
     GAME_UE4_22 = GameUtils.GameUe4Base + (22 << 16),
+        GAME_DestroyAllHumans = GAME_UE4_22 + 1,
     GAME_UE4_23 = GameUtils.GameUe4Base + (23 << 16),
         GAME_ApexLegendsMobile = GAME_UE4_23 + 1,
     GAME_UE4_24 = GameUtils.GameUe4Base + (24 << 16),
