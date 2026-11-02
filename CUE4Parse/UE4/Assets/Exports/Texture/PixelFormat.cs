@@ -161,7 +161,7 @@ public static class PixelFormatUtils
             return true;
         }
 
-        foreach (var formatInfo in PixelFormats)
+        foreach (var formatInfo in PixelFormats.Values)
         {
             if (!string.Equals(formatInfo.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
             pixelFormat = formatInfo.UnrealFormat;
