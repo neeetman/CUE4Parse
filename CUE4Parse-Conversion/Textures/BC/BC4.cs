@@ -62,7 +62,7 @@ public static partial class BCDecoder
                         for (int col = 0; col < width; col++)
                         {
                             byte gray = bytes[(row << 2) + col];
-                            outputSpan[offset + col] = (uint)(gray | gray << 8 | gray << 16 | 0xFFu << 24);
+                            outputSpan[offset + col] = (uint)(gray << 16 | 0xFFu << 24);
                         }
                         offset += sizeX;
                     }
@@ -74,7 +74,7 @@ public static partial class BCDecoder
                         byte gray = bytes[i];
                         int pixelLoc = xPixelOffset + (i >> 2) * sizeX + (i & 3);
 
-                        outputSpan[pixelLoc] = (uint)(gray | gray << 8 | gray << 16 | 0xFFu << 24);
+                        outputSpan[pixelLoc] = (uint)(gray << 16 | 0xFFu << 24);
                     }
                 }
                 xPixelOffset += 4;
