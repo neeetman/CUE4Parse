@@ -75,6 +75,7 @@ public enum EGame : uint
     GAME_UE4_21 = GameUtils.GameUe4Base + (21 << 16),
         GAME_StarWarsJediFallenOrder = GAME_UE4_21 + 1,
         GAME_Undawn = GAME_UE4_21 + 2,
+        GAME_TheOuterWorlds = GAME_UE4_21 + 3,
     GAME_UE4_22 = GameUtils.GameUe4Base + (22 << 16),
         // Fork-only (reserved range, see GAME_UE4_27).
         GAME_DestroyAllHumans = GAME_UE4_22 + 0x8000,
